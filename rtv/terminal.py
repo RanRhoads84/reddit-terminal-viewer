@@ -1,12 +1,8 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import os
 import re
 import sys
 import time
 import shlex
-import codecs
 import curses
 import logging
 import threading
@@ -19,8 +15,7 @@ from multiprocessing import Process
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
 
-import six
-from kitchen.text.display import textual_width_chop
+from .compat import textual_width_chop
 
 from . import exceptions, mime_parsers, content
 from .docs import TOKEN
@@ -33,12 +28,7 @@ try:
 except ImportError:
     import mailcap
 
-try:
-    # Added in python 3.4+
-    from html import unescape
-except ImportError:
-    from six.moves import html_parser
-    unescape = html_parser.HTMLParser().unescape
+from html import unescape
 
 
 _logger = logging.getLogger(__name__)
@@ -211,13 +201,6 @@ class Terminal(object):
         Required reading!
             http://nedbatchelder.com/text/unipain.html
 
-        Python 2 input string will be a unicode type (unicode code points).
-        Curses will accept unicode if all of the points are in the ascii range.
-        However, if any of the code points are not valid ascii curses will
-        throw a UnicodeEncodeError: 'ascii' codec can't encode character,
-        ordinal not in range(128). If we encode the unicode to a utf-8 byte
-        string and pass that to curses, it will render correctly.
-
         Python 3 input string will be a string type (unicode code points).
         Curses will accept that in all cases. However, the n character count in
         addnstr will not be correct. If code points are passed to addnstr,
@@ -238,18 +221,18 @@ class Terminal(object):
         if n_cols is not None and n_cols <= 0:
             return ''
 
-        if isinstance(string, six.text_type):
+        if isinstance(string, str):
             string = unescape(string)
 
         if self.config['ascii']:
-            if isinstance(string, six.binary_type):
+            if isinstance(string, bytes):
                 string = string.decode('utf-8')
             string = string.encode('ascii', 'replace')
             return string[:n_cols] if n_cols else string
         else:
             if n_cols:
                 string = textual_width_chop(string, n_cols)
-            if isinstance(string, six.text_type):
+            if isinstance(string, str):
                 string = string.encode('utf-8')
             return string
 
@@ -283,8 +266,7 @@ class Terminal(object):
             window.addstr(row, col, text, *params)
         except (curses.error, ValueError, TypeError) as e:
             # Curses handling of strings with invalid null bytes (b'\00')
-            #   python 2: TypeError: "int,int,str"
-            #   python 3: ValueError: "embedded null byte"
+            # raises ValueError: "embedded null byte"
             _logger.warning('add_line raised an exception')
             _logger.exception(str(e))
 
@@ -317,7 +299,7 @@ class Terminal(object):
 
         assert style in ('Info', 'Warning', 'Error', 'Success')
 
-        if isinstance(message, six.string_types):
+        if isinstance(message, str):
             message = message.splitlines()
 
         n_rows, n_cols = self.stdscr.getmaxyx()
@@ -477,7 +459,7 @@ class Terminal(object):
                     universal_newlines=True, shell=True)
                 _, stderr = p.communicate()
                 if copious_output:
-                    six.moves.input('Press any key to continue')
+                    input('Press any key to continue')
             code = p.poll()
             if code != 0:
                 _logger.warning(stderr)
@@ -696,7 +678,7 @@ class Terminal(object):
             # we can re-open using the right encoding
             filepath = fp.name
 
-        with codecs.open(filepath, 'w', 'utf-8') as fp:
+        with open(filepath, 'w', encoding='utf-8') as fp:
             fp.write(data)
         _logger.info('File created: %s', filepath)
 
@@ -717,7 +699,7 @@ class Terminal(object):
             _logger.exception(e)
             self.show_notification('Could not open file with %s' % editor)
 
-        with codecs.open(filepath, 'r', 'utf-8') as fp:
+        with open(filepath, 'r', encoding='utf-8') as fp:
             text = fp.read()
             text = self.strip_instructions(text)
 
@@ -805,7 +787,7 @@ class Terminal(object):
         # of the input.
         try:
             out = textbox.edit(validate=validate)
-            if isinstance(out, six.binary_type):
+            if isinstance(out, bytes):
                 out = out.decode('utf-8')
         except exceptions.EscapeInterrupt:
             out = None

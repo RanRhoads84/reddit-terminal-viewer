@@ -11,10 +11,7 @@ from rtv.theme import Theme
 from rtv.config import DEFAULT_THEMES
 from rtv.exceptions import ConfigError
 
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 
 
 INVALID_ELEMENTS = OrderedDict([

@@ -1,13 +1,8 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import re
 import os
 import curses
-import codecs
 from textwrap import dedent
 
-import six
 import pytest
 
 from rtv.theme import Theme
@@ -15,18 +10,15 @@ from rtv.docs import (HELP, REPLY_FILE, COMMENT_EDIT_FILE, TOKEN,
                       SUBMISSION_FILE, SUBMISSION_EDIT_FILE, MESSAGE_FILE)
 from rtv.exceptions import TemporaryFileError, BrowserError
 
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 
 
 def test_terminal_properties(terminal, config):
 
-    assert isinstance(terminal.up_arrow, six.text_type)
-    assert isinstance(terminal.down_arrow, six.text_type)
-    assert isinstance(terminal.neutral_arrow, six.text_type)
-    assert isinstance(terminal.gilded, six.text_type)
+    assert isinstance(terminal.up_arrow, str)
+    assert isinstance(terminal.down_arrow, str)
+    assert isinstance(terminal.neutral_arrow, str)
+    assert isinstance(terminal.gilded, str)
 
     terminal._display = None
     with mock.patch('rtv.terminal.sys') as sys, \
@@ -108,17 +100,17 @@ def test_terminal_clean_ascii(terminal):
 
     # unicode returns ascii
     text = terminal.clean('hello ❤')
-    assert isinstance(text, six.binary_type)
+    assert isinstance(text, bytes)
     assert text.decode('ascii') == 'hello ?'
 
     # utf-8 returns ascii
     text = terminal.clean('hello ❤'.encode('utf-8'))
-    assert isinstance(text, six.binary_type)
+    assert isinstance(text, bytes)
     assert text.decode('ascii') == 'hello ?'
 
     # ascii returns ascii
     text = terminal.clean('hello'.encode('ascii'))
-    assert isinstance(text, six.binary_type)
+    assert isinstance(text, bytes)
     assert text.decode('ascii') == 'hello'
 
 
@@ -128,17 +120,17 @@ def test_terminal_clean_unicode(terminal):
 
     # unicode returns utf-8
     text = terminal.clean('hello ❤')
-    assert isinstance(text, six.binary_type)
+    assert isinstance(text, bytes)
     assert text.decode('utf-8') == 'hello ❤'
 
     # utf-8 returns utf-8
     text = terminal.clean('hello ❤'.encode('utf-8'))
-    assert isinstance(text, six.binary_type)
+    assert isinstance(text, bytes)
     assert text.decode('utf-8') == 'hello ❤'
 
     # ascii returns utf-8
     text = terminal.clean('hello'.encode('ascii'))
-    assert isinstance(text, six.binary_type)
+    assert isinstance(text, bytes)
     assert text.decode('utf-8') == 'hello'
 
 
@@ -163,7 +155,7 @@ def test_terminal_clean_unescape_html(terminal, use_ascii):
     # HTML characters get decoded
     terminal.config['ascii'] = use_ascii
     text = terminal.clean('&lt;')
-    assert isinstance(text, six.binary_type)
+    assert isinstance(text, bytes)
     assert text.decode('ascii' if use_ascii else 'utf-8') == '<'
 
 
@@ -173,12 +165,12 @@ def test_terminal_add_line(terminal, stdscr, use_ascii):
     terminal.config['ascii'] = use_ascii
 
     terminal.add_line(stdscr, 'hello')
-    assert stdscr.addstr.called_with(0, 0, 'hello'.encode('ascii'))
+    stdscr.addstr.assert_called_with(0, 0, 'hello'.encode('ascii'))
     stdscr.reset_mock()
 
     # Text will be drawn, but cut off to fit on the screen
     terminal.add_line(stdscr, 'hello', row=3, col=75)
-    assert stdscr.addstr.called_with((3, 75, 'hell'.encode('ascii')))
+    stdscr.addstr.assert_called_with(3, 75, 'hell'.encode('ascii'))
     stdscr.reset_mock()
 
     # Outside of screen bounds, don't even try to draw the text
@@ -225,7 +217,7 @@ def test_terminal_text_input(terminal, stdscr, use_ascii):
     # Text will be wrong because stdscr.inch() is not implemented
     # But we can at least tell if text was captured or not
     stdscr.getch.side_effect = [ord('h'), ord('i'), ord('!'), terminal.RETURN]
-    assert isinstance(terminal.text_input(stdscr), six.text_type)
+    assert isinstance(terminal.text_input(stdscr), str)
 
     stdscr.getch.side_effect = [ord('b'), ord('y'), ord('e'), terminal.ESCAPE]
     assert terminal.text_input(stdscr) is None
@@ -244,7 +236,7 @@ def test_terminal_prompt_input(terminal, stdscr, use_ascii):
     window = stdscr.derwin()
 
     window.getch.side_effect = [ord('h'), ord('i'), terminal.RETURN]
-    assert isinstance(terminal.prompt_input('hi'), six.text_type)
+    assert isinstance(terminal.prompt_input('hi'), str)
 
     stdscr.subwin.addstr.assert_called_with(0, 0, 'hi'.encode('ascii'))
     assert window.nlines == 1
@@ -296,7 +288,7 @@ def test_terminal_open_editor(terminal, use_ascii):
 
     def side_effect(args):
         data['filename'] = args[1]
-        with codecs.open(data['filename'], 'r+', 'utf-8') as fp:
+        with open(data['filename'], 'r+', encoding='utf-8') as fp:
             assert fp.read() == comment
             fp.write('Comment 2 ❤')
         return mock.Mock()
@@ -398,7 +390,7 @@ def test_terminal_open_link_subprocess(terminal):
     with mock.patch('time.sleep'),                            \
             mock.patch('os.system'),                          \
             mock.patch('subprocess.Popen') as Popen,          \
-            mock.patch('six.moves.input') as six_input,       \
+            mock.patch('builtins.input') as six_input,       \
             mock.patch.object(terminal, 'get_mailcap_entry'):
 
         six_input.return_values = 'y'
@@ -528,7 +520,7 @@ def test_terminal_open_pager(terminal, stdscr):
         Popen.side_effect = side_effect
         terminal.open_pager(data)
         message = 'Could not open pager fake'.encode('ascii')
-        assert stdscr.addstr.called_with(0, 0, message)
+        stdscr.subwin.addstr.assert_called_with(1, 1, message)
 
 
 def test_terminal_open_urlview(terminal, stdscr):
@@ -555,7 +547,7 @@ def test_terminal_open_urlview(terminal, stdscr):
         Popen.side_effect = side_effect
         terminal.open_urlview(data)
         message = 'Failed to open fake'.encode('utf-8')
-        assert stdscr.addstr.called_with(0, 0, message)
+        stdscr.subwin.addstr.assert_called_with(1, 1, message)
 
 
 def test_terminal_strip_textpad(terminal):

@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 AGENT = """\
 desktop:https://github.com/michael-lazar/rtv:{version}\
 (by /u/civilization_phaze_3)\

@@ -1,11 +1,7 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import time
 from itertools import islice
 from collections import OrderedDict
 
-import six
 import pytest
 
 from rtv import exceptions
@@ -14,10 +10,7 @@ from rtv.content import (
     Content, SubmissionContent, SubredditContent, SubscriptionContent,
     RequestHeaderRateLimiter)
 
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 
 # Test entering a bunch of text into the prompt
 # (text, parsed subreddit, parsed order)
@@ -254,7 +247,7 @@ def test_content_submission(reddit, terminal):
                                        'hidden'))
         # All text should be converted to unicode by this point
         for val in data.values():
-            assert not isinstance(val, six.binary_type)
+            assert not isinstance(val, bytes)
 
     # Out of bounds
     with pytest.raises(IndexError):
@@ -356,7 +349,7 @@ def test_content_subreddit(reddit, terminal):
             'split_title', 'hidden'))
         # All text should be converted to unicode by this point
         for val in data.values():
-            assert not isinstance(val, six.binary_type)
+            assert not isinstance(val, bytes)
 
     # Out of bounds
     with pytest.raises(IndexError):
@@ -378,11 +371,11 @@ def test_content_subreddit_load_more(reddit, terminal):
                                        'index', 'title', 'split_title'))
         # All text should be converted to unicode by this point
         for val in data.values():
-            assert not isinstance(val, six.binary_type)
+            assert not isinstance(val, bytes)
 
         # Index be appended to each title, starting at "1." and incrementing
         assert data['index'] == i + 1
-        assert data['title'].startswith(six.text_type(i + 1))
+        assert data['title'].startswith(str(i + 1))
 
 
 args, ids = SUBREDDIT_PROMPTS.values(), list(SUBREDDIT_PROMPTS)
@@ -549,7 +542,7 @@ def test_content_subscription(reddit, terminal):
                                        'title', 'split_title'))
         # All text should be converted to unicode by this point
         for val in data.values():
-            assert not isinstance(val, six.binary_type)
+            assert not isinstance(val, bytes)
 
     assert content.range == (0, 19)
 

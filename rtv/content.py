@@ -1,15 +1,11 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import re
 import time
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from timeit import default_timer as timer
 
-import six
 from bs4 import BeautifulSoup
-from kitchen.text.display import wrap
+from .compat import wrap
 
 from . import exceptions
 from .packages import praw
@@ -184,7 +180,7 @@ class Content(object):
             data['url'] = comment._fast_permalink
             data['permalink'] = comment._fast_permalink
             data['nsfw'] = comment.over_18
-            data['subreddit'] = six.text_type(comment.subreddit)
+            data['subreddit'] = str(comment.subreddit)
             data['url_type'] = 'selfpost'
             data['score'] = '{0} pts'.format(
                 '-' if comment.score_hidden else comment.score)
@@ -236,7 +232,7 @@ class Content(object):
         data['score'] = '{0} pts'.format('-' if sub.hide_score else sub.score)
         data['author'] = name
         data['permalink'] = sub.permalink
-        data['subreddit'] = six.text_type(sub.subreddit)
+        data['subreddit'] = str(sub.subreddit)
         data['flair'] = '[{0}]'.format(flair.strip(' []')) if flair else ''
         data['url_full'] = sub.url
         data['likes'] = sub.likes
@@ -347,7 +343,8 @@ class Content(object):
         Convert a utc timestamp into a human readable relative-time.
         """
 
-        timedelta = datetime.utcnow() - datetime.utcfromtimestamp(utc_timestamp)
+        timedelta = (datetime.now(timezone.utc)
+                     - datetime.fromtimestamp(utc_timestamp, timezone.utc))
 
         seconds = int(timedelta.total_seconds())
         if seconds < 60:
@@ -419,7 +416,7 @@ class Content(object):
         """
         links = []
         soup = BeautifulSoup(html, 'html.parser')
-        for link in soup.findAll('a'):
+        for link in soup.find_all('a'):
             href = link.get('href')
             if not href:
                 continue
@@ -1123,7 +1120,7 @@ class RequestHeaderRateLimiter(DefaultHandler):
 
         Return the number of items removed.
         """
-        if isinstance(urls, six.text_type):
+        if isinstance(urls, str):
             urls = [urls]
         urls = set(normalize_url(url) for url in urls)
         retval = 0

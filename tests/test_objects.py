@@ -1,30 +1,20 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
+import sys
 import time
 import curses
+import importlib
 from collections import OrderedDict
 
 import os
-import six
 import pytest
 import requests
-from six.moves import reload_module
 
 from rtv import exceptions
 from rtv.objects import Controller, Navigator, Command, KeyMap, \
     curses_session, patch_webbrowser
 
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 
-# webbrowser's command to check if a file exists is different for py2/py3
-if six.PY3:
-    mock_isfile = mock.patch('shutil.which', return_value=None)
-else:
-    mock_isfile = mock.patch('os.path.isfile', return_value=None)
+mock_isfile = mock.patch('shutil.which', return_value=None)
 
 
 @mock.patch.dict(os.environ, {'BROWSER': 'safari'})
@@ -35,11 +25,16 @@ def test_patch_webbrowser(*_):
     # Make sure that webbrowser re-generates the browser list using the
     # mocked environment
     import webbrowser
-    webbrowser = reload_module(webbrowser)
+    webbrowser = importlib.reload(webbrowser)
 
     # By default, we expect that BROWSER will be loaded as a generic browser
-    # This is because "safari" is not a valid script in the system PATH
-    assert isinstance(webbrowser.get(), webbrowser.GenericBrowser)
+    # This is because "safari" is not a valid script in the system PATH.
+    # Python 3.13+ fixed https://bugs.python.org/issue31348 natively and
+    # registers $BROWSER entries as OSAScript browsers on macOS.
+    if sys.version_info >= (3, 13):
+        assert isinstance(webbrowser.get(), webbrowser.MacOSXOSAScript)
+    else:
+        assert isinstance(webbrowser.get(), webbrowser.GenericBrowser)
 
     # After patching, the default webbrowser should now be interpreted as an
     # OSAScript browser
@@ -323,7 +318,7 @@ def test_objects_controller_command():
     keymap = KeyMap({'REFRESH': [0x10, 0x11], 'UPVOTE': [0x11, 0x12]})
     with pytest.raises(exceptions.ConfigError) as e:
         ControllerA(None, keymap=keymap)
-    assert 'ControllerA' in six.text_type(e)
+    assert 'ControllerA' in str(e)
 
     # Reset the character map
     ControllerA.character_map = {Command('REFRESH'): 0, Command('UPVOTE'): 0}
@@ -332,13 +327,13 @@ def test_objects_controller_command():
     keymap = KeyMap(OrderedDict([('REFRESH', ['gg']), ('UPVOTE', ['g'])]))
     with pytest.raises(exceptions.ConfigError) as e:
         ControllerA(None, keymap=keymap)
-    assert 'ControllerA' in six.text_type(e)
+    assert 'ControllerA' in str(e)
 
     # It doesn't matter which order they were entered
     keymap = KeyMap(OrderedDict([('UPVOTE', ['g']), ('REFRESH', ['gg'])]))
     with pytest.raises(exceptions.ConfigError) as e:
         ControllerA(None, keymap=keymap)
-    assert 'ControllerA' in six.text_type(e)
+    assert 'ControllerA' in str(e)
 
     # Reset the character map
     ControllerA.character_map = {Command('REFRESH'): 0, Command('UPVOTE'): 0}
@@ -347,7 +342,7 @@ def test_objects_controller_command():
     keymap = KeyMap({'REFRESH': [0x10]})
     with pytest.raises(exceptions.ConfigError) as e:
         ControllerB(None, keymap=keymap)
-    assert 'UPVOTE' in six.text_type(e)
+    assert 'UPVOTE' in str(e)
 
 
 def test_objects_command():
@@ -382,7 +377,7 @@ def test_objects_keymap():
     assert keymap.get('upvote') == ['b', '<KEY_F5>']
     with pytest.raises(exceptions.ConfigError) as e:
         keymap.get('downvote')
-    assert 'DOWNVOTE' in six.text_type(e)
+    assert 'DOWNVOTE' in str(e)
 
     bindings = {'refresh': ['a', 0x12, '<LF>', '<KEY_UP>']}
     bindings2 = {'upvote': ['b', 0x13, '<KEY_DOWN>']}
@@ -391,7 +386,7 @@ def test_objects_keymap():
     assert keymap.get('refresh')
     with pytest.raises(exceptions.ConfigError) as e:
         keymap.get('upvote')
-    assert 'UPVOTE' in six.text_type(e)
+    assert 'UPVOTE' in str(e)
     keymap.set_bindings(bindings2)
     assert keymap.get('refresh')
     assert keymap.get('upvote')
@@ -406,7 +401,7 @@ def test_objects_keymap():
     for key in ('', None, '<lf>', '<DNS>', '<KEY_UD>', '♬', 'ggg'):
         with pytest.raises(exceptions.ConfigError) as e:
             keymap.parse(key)
-        assert six.text_type(key) in six.text_type(e)
+        assert str(key) in str(e)
 
 
 def test_objects_navigator_properties():

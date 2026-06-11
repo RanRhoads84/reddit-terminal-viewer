@@ -1,7 +1,6 @@
 """Provides classes that handle request dispatching."""
 
-from __future__ import print_function, unicode_literals
-
+import pickle
 import socket
 import sys
 import time
@@ -9,8 +8,6 @@ from functools import wraps
 from .errors import ClientException
 from .helpers import normalize_url
 from requests import Session
-from six import text_type
-from six.moves import cPickle  # pylint: disable=F0401
 from threading import Lock
 from timeit import default_timer as timer
 
@@ -173,7 +170,7 @@ class DefaultHandler(RateLimitHandler):
         Return the number of items removed.
 
         """
-        if isinstance(urls, text_type):
+        if isinstance(urls, str):
             urls = [urls]
         urls = set(normalize_url(url) for url in urls)
         retval = 0
@@ -205,9 +202,9 @@ class MultiprocessHandler(object):
             sock_fp = sock.makefile('rwb')  # Used for pickle
             try:
                 sock.connect((self.host, self.port))
-                cPickle.dump(kwargs, sock_fp, cPickle.HIGHEST_PROTOCOL)
+                pickle.dump(kwargs, sock_fp, pickle.HIGHEST_PROTOCOL)
                 sock_fp.flush()
-                retval = cPickle.load(sock_fp)
+                retval = pickle.load(sock_fp)
             except:  # pylint: disable=W0702
                 exc_type, exc, _ = sys.exc_info()
                 socket_error = exc_type is socket.error

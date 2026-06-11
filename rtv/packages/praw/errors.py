@@ -21,10 +21,7 @@ server side. A number of classes extend these two main exceptions for more
 specific exceptions.
 """
 
-from __future__ import print_function, unicode_literals
-
 import inspect
-import six
 import sys
 
 
@@ -337,7 +334,7 @@ class ExceptionList(APIException):
         """Return a string representation for all the errors."""
         ret = '\n'
         for i, error in enumerate(self.errors):
-            ret += '\tError {0}) {1}\n'.format(i, six.text_type(error))
+            ret += '\tError {0}) {1}\n'.format(i, str(error))
         return ret
 
 

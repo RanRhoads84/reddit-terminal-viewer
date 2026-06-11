@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import os
+import zlib
 import curses
 import logging
 import threading
@@ -9,7 +7,8 @@ from functools import partial
 
 import pytest
 from vcr import VCR
-from six.moves.urllib.parse import urlparse, parse_qs
+from vcr.serializers import yamlserializer
+from urllib.parse import urlparse, parse_qs
 
 from rtv.oauth import OAuthHelper, OAuthHandler, OAuthHTTPServer
 from rtv.content import RequestHeaderRateLimiter
@@ -21,10 +20,7 @@ from rtv.submission_page import SubmissionPage
 from rtv.subscription_page import SubscriptionPage
 from rtv.inbox_page import InboxPage
 
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 
 # Turn on autospec by default for convenience
 patch = partial(mock.patch, autospec=True)
@@ -86,6 +82,44 @@ class MockStdscr(mock.MagicMock):
         return self.subwin
 
 
+class DecompressSerializer(object):
+    """
+    The cassettes in this repository were recorded with vcrpy 1.x, which
+    stored the raw gzip/deflate bytes from the wire. urllib3 2.x no longer
+    decompresses bodies on played-back responses, so inflate them once at
+    load time and drop the Content-Encoding header.
+    """
+
+    @staticmethod
+    def serialize(cassette_dict):
+        return yamlserializer.serialize(cassette_dict)
+
+    @staticmethod
+    def deserialize(cassette_string):
+        cassette_dict = yamlserializer.deserialize(cassette_string)
+        for interaction in cassette_dict.get('interactions', []):
+            response = interaction.get('response') or {}
+            headers = response.get('headers') or {}
+            encodings = []
+            for key in list(headers):
+                if key.lower() == 'content-encoding':
+                    encodings = headers.pop(key)
+            if not any(enc in ('gzip', 'deflate') for enc in encodings):
+                continue
+            body = response.get('body', {}).get('string')
+            if isinstance(body, bytes) and body[:2] == b'\x1f\x8b':
+                body = zlib.decompress(body, 16 + zlib.MAX_WBITS)
+            elif isinstance(body, bytes) and 'deflate' in encodings:
+                body = zlib.decompress(body)
+            else:
+                continue
+            response['body']['string'] = body
+            for key in list(headers):
+                if key.lower() == 'content-length':
+                    headers[key] = [str(len(body))]
+        return cassette_dict
+
+
 @pytest.fixture(scope='session')
 def vcr(request):
 
@@ -111,10 +145,12 @@ def vcr(request):
     # https://github.com/kevin1024/vcrpy/pull/196
     vcr = VCR(
         record_mode=request.config.option.record_mode,
+        serializer='yaml_decompress',
         filter_headers=[('Authorization', '**********')],
         filter_post_data_parameters=[('refresh_token', '**********')],
         match_on=['method', 'uri_with_query', 'auth', 'body'],
         cassette_library_dir=cassette_dir)
+    vcr.register_serializer('yaml_decompress', DecompressSerializer)
     vcr.register_matcher('auth', auth_matcher)
     vcr.register_matcher('uri_with_query', uri_with_query_matcher)
     return vcr
@@ -130,7 +166,7 @@ def refresh_token(request):
             return fp.read()
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def config():
     conf = Config()
     with mock.patch.object(conf, 'save_history'),          \
@@ -146,7 +182,7 @@ def config():
         yield conf
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def stdscr():
     with patch('curses.initscr'),               \
             patch('curses.echo'),               \
@@ -174,7 +210,7 @@ def stdscr():
         yield out
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def reddit(vcr, request):
     cassette_name = '%s.yaml' % request.node.name
     # Clear the cassette before running the test
@@ -215,7 +251,7 @@ def oauth(reddit, terminal, config):
     return OAuthHelper(reddit, terminal, config)
 
 
-@pytest.yield_fixture()
+@pytest.fixture()
 def oauth_server():
     # Start the OAuth server on a random port in the background
     server = OAuthHTTPServer(('', 0), OAuthHandler)

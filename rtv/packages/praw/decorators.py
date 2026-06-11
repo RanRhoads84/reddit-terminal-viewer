@@ -21,10 +21,7 @@ first. Also, they can limit the length of output strings and parse json
 response for certain errors.
 """
 
-from __future__ import print_function, unicode_literals
-
 import decorator
-import six
 import sys
 from functools import wraps
 from .decorator_helpers import (
@@ -245,7 +242,7 @@ def restrict_access(scope, mod=None, login=None, oauth_only=False,
                 subreddit = kwargs.get(
                     'subreddit', args[1] if len(args) > 1 else None)
                 if subreddit is None:  # Try the default value
-                    defaults = six.get_function_defaults(function)
+                    defaults = function.__defaults__
                     subreddit = defaults[0] if defaults else None
         else:
             subreddit = None

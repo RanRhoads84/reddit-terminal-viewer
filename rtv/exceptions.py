@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
-
 class EscapeInterrupt(Exception):
     "Signal that the ESC key has been pressed"
 

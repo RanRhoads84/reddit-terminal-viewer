@@ -1,11 +1,9 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 """
 Scrape the project contributors list from Github and update AUTHORS.rst
 """
 
-from __future__ import unicode_literals
 import os
 import time
 import logging

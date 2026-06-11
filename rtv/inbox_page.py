@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 from . import docs
 from .content import InboxContent
 from .page import Page, PageController, logged_in

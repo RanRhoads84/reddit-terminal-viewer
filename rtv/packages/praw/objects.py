@@ -22,10 +22,7 @@ extends over multiple Things. An object that extends from Saveable indicates
 that it can be saved and unsaved in the context of a logged in user.
 """
 
-from __future__ import print_function, unicode_literals
-import six
-from six.moves.urllib.parse import (  # pylint: disable=F0401
-    parse_qs, urlparse, urlunparse)
+from urllib.parse import parse_qs, urlparse, urlunparse
 from heapq import heappop, heappush
 from json import dumps
 from requests.compat import urljoin
@@ -113,7 +110,7 @@ class RedditContentObject(object):
 
     def __setattr__(self, name, value):
         """Set the `name` attribute to `value."""
-        if value and name == 'subreddit' and isinstance(value, six.string_types):
+        if value and name == 'subreddit' and isinstance(value, str):
             value = Subreddit(self.reddit_session, value, fetch=False)
         elif name == 'permalink' and isinstance(self, Comment):
             # The Reddit API now returns the permalink field for comments. This
@@ -136,8 +133,6 @@ class RedditContentObject(object):
     def __str__(self):
         """Return a string representation of the RedditContentObject."""
         retval = self.__unicode__()
-        if not six.PY3:
-            retval = retval.encode('utf-8')
         return retval
 
     def _get_json_dict(self):
@@ -180,7 +175,7 @@ class RedditContentObject(object):
         if isinstance(json_dict, list):
             json_dict = {'_tmp': json_dict}
 
-        for name, value in six.iteritems(json_dict):
+        for name, value in json_dict.items():
             if self._underscore_names and name in self._underscore_names:
                 name = '_' + name
             setattr(self, name, value)
@@ -358,7 +353,7 @@ class Gildable(RedditContentObject):
                 raise TypeError('months must be no more than 36')
             response = self.reddit_session.request(
                 self.reddit_session.config['gild_user'].format(
-                    username=six.text_type(self)), data={'months': months})
+                    username=str(self)), data={'months': months})
         elif months is not None:
             raise TypeError('months is not a valid parameter for {0}'
                             .format(type(self)))
@@ -499,7 +494,7 @@ class Refreshable(RedditContentObject):
                               uniq=unique)
         elif isinstance(self, WikiPage):
             other = WikiPage(self.reddit_session,
-                             six.text_type(self.subreddit), self.page,
+                             str(self.subreddit), self.page,
                              fetch=True, uniq=unique)
 
         self.__dict__ = other.__dict__  # pylint: disable=W0201
@@ -624,7 +619,7 @@ class Voteable(RedditContentObject):
         """
         url = self.reddit_session.config['vote']
         data = {'id': self.fullname,
-                'dir': six.text_type(direction)}
+                'dir': str(direction)}
         if self.reddit_session.user:
             # pylint: disable=W0212
             urls = [urljoin(self.reddit_session.user._url, 'disliked'),
@@ -1062,7 +1057,7 @@ class LoggedInRedditor(Redditor):
         if self._mod_subs is None:
             self._mod_subs = {'mod': self.reddit_session.get_subreddit('mod')}
             for sub in self.reddit_session.get_my_moderation(limit=None):
-                self._mod_subs[six.text_type(sub).lower()] = sub
+                self._mod_subs[str(sub).lower()] = sub
         return self._mod_subs
 
     @deprecated('``get_friends`` has been moved to '
@@ -1189,7 +1184,7 @@ class Submission(Editable, Gildable, Hideable, Moderatable, Refreshable,
         Note: The representation is truncated to a fix number of characters.
         """
         title = self.title.replace('\r\n', ' ')
-        return six.text_type('{0} :: {1}').format(self.score, title)
+        return '{0} :: {1}'.format(self.score, title)
 
     def _insert_comment(self, comment):
         if comment.name in self._comments_by_id:  # Skip existing comments
@@ -1605,7 +1600,7 @@ class Subreddit(Messageable, Refreshable):
         if subreddit_name is None:
             subreddit_name = json_dict['url'].split('/')[2]
 
-        if not isinstance(subreddit_name, six.string_types) \
+        if not isinstance(subreddit_name, str) \
                 or not subreddit_name:
             raise TypeError('subreddit_name must be a non-empty string.')
 
@@ -1711,7 +1706,7 @@ class Multireddit(Refreshable):
         if json_dict and json_dict['path']:
             json_dict['path'] = json_dict['path'].rstrip('/')
 
-        author = six.text_type(author) if author \
+        author = str(author) if author \
             else json_dict['path'].split('/')[-3]
         if not name:
             name = json_dict['path'].split('/')[-1]
@@ -1755,7 +1750,7 @@ class Multireddit(Refreshable):
         :meth:`~praw.__init__.BaseReddit.request_json`.
 
         """
-        subreddit = six.text_type(subreddit)
+        subreddit = str(subreddit)
         url = self.reddit_session.config['multireddit_add'].format(
             user=self._author, multi=self.name, subreddit=subreddit)
         method = 'DELETE' if _delete else 'PUT'
@@ -1863,7 +1858,7 @@ class PRAWListing(RedditContentObject):
 
     def __unicode__(self):
         """Return a string representation of the listing."""
-        return six.text_type(getattr(self, self.CHILD_ATTRIBUTE))
+        return str(getattr(self, self.CHILD_ATTRIBUTE))
 
 
 class UserList(PRAWListing):
@@ -1903,7 +1898,7 @@ class WikiPage(Refreshable):
             subreddit = json_dict['sr']
             page = json_dict['page']
         info_url = reddit_session.config['wiki_page'].format(
-            subreddit=six.text_type(subreddit), page=page)
+            subreddit=str(subreddit), page=page)
         super(WikiPage, self).__init__(reddit_session, json_dict, fetch,
                                        info_url, **kwargs)
         self.page = page
@@ -1911,7 +1906,7 @@ class WikiPage(Refreshable):
 
     def __unicode__(self):
         """Return a string representation of the page."""
-        return six.text_type('{0}:{1}').format(self.subreddit, self.page)
+        return '{0}:{1}'.format(self.subreddit, self.page)
 
     @restrict_access(scope='modwiki')
     def add_editor(self, username, _delete=False, *args, **kwargs):
@@ -1925,11 +1920,11 @@ class WikiPage(Refreshable):
         :meth:`~praw.__init__.BaseReddit.request_json`.
         """
         url = self.reddit_session.config['wiki_page_editor']
-        url = url.format(subreddit=six.text_type(self.subreddit),
+        url = url.format(subreddit=str(self.subreddit),
                          method='del' if _delete else 'add')
 
         data = {'page': self.page,
-                'username': six.text_type(username)}
+                'username': str(username)}
         return self.reddit_session.request_json(url, data=data, *args,
                                                 **kwargs)
 
@@ -1944,7 +1939,7 @@ class WikiPage(Refreshable):
         :meth:`~praw.__init__.BaseReddit.request_json`
         """
         url = self.reddit_session.config['wiki_page_settings']
-        url = url.format(subreddit=six.text_type(self.subreddit),
+        url = url.format(subreddit=str(self.subreddit),
                          page=self.page)
         return self.reddit_session.request_json(url, *args, **kwargs)['data']
 
@@ -1975,7 +1970,7 @@ class WikiPage(Refreshable):
 
         """
         url = self.reddit_session.config['wiki_page_settings']
-        url = url.format(subreddit=six.text_type(self.subreddit),
+        url = url.format(subreddit=str(self.subreddit),
                          page=self.page)
         data = {'permlevel': permlevel,
                 'listed': 'on' if listed else 'off'}

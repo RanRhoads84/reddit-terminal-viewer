@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import re
 import os
 import sys
@@ -15,7 +12,6 @@ import curses
 import curses.ascii
 from contextlib import contextmanager
 
-import six
 import requests
 
 from . import exceptions
@@ -585,7 +581,7 @@ class Controller(object):
 
     def trigger(self, char, *args, **kwargs):
 
-        if isinstance(char, six.string_types) and len(char) == 1:
+        if isinstance(char, str) and len(char) == 1:
             char = ord(char)
 
         func = None
@@ -610,7 +606,7 @@ class Controller(object):
     def register(cls, *chars):
         def inner(f):
             for char in chars:
-                if isinstance(char, six.string_types) and len(char) == 1:
+                if isinstance(char, str) and len(char) == 1:
                     cls.character_map[ord(char)] = f
                 else:
                     cls.character_map[char] = f

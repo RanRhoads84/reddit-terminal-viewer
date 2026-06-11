@@ -18,10 +18,8 @@ The functions in this module are not to be relied upon by third-parties.
 
 """
 
-from __future__ import print_function, unicode_literals
 import os
 import re
-import six
 import sys
 from requests import Request, codes, exceptions
 from requests.compat import urljoin
@@ -81,7 +79,7 @@ def _get_sorter(subpath='', **defaults):
         """
         if not kwargs.get('params'):
             kwargs['params'] = {}
-        for key, value in six.iteritems(defaults):
+        for key, value in defaults.items():
             kwargs['params'].setdefault(key, value)
         url = urljoin(self._url, subpath)  # pylint: disable=W0212
         return self.reddit_session.get_content(url, *args, **kwargs)
@@ -129,18 +127,18 @@ def _modify_relationship(relationship, unlink=False, is_sub=False):
 
     @restrict_access(**access)
     def do_relationship(thing, user, **kwargs):
-        data = {'name': six.text_type(user),
+        data = {'name': str(user),
                 'type': relationship}
         data.update(kwargs)
         if is_sub:
-            data['r'] = six.text_type(thing)
+            data['r'] = str(thing)
         else:
             data['container'] = thing.fullname
 
         session = thing.reddit_session
         if relationship == 'moderator':
             session.evict(session.config['moderators'].format(
-                subreddit=six.text_type(thing)))
+                subreddit=str(thing)))
         url = session.config[url_key]
         return session.request_json(url, data=data)
     return do_relationship
@@ -253,11 +251,11 @@ def _to_reddit_list(arg):
     representation of an object. Either given as a string or as an object that
     is then converted to its string representation.
     """
-    if (isinstance(arg, six.string_types) or not (
+    if (isinstance(arg, str) or not (
             hasattr(arg, "__getitem__") or hasattr(arg, "__iter__"))):
-        return six.text_type(arg)
+        return str(arg)
     else:
-        return ','.join(six.text_type(a) for a in arg)
+        return ','.join(str(a) for a in arg)
 
 
 def _warn_pyopenssl():

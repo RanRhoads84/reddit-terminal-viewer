@@ -1,16 +1,10 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import curses
 
 import pytest
 
 from rtv.page import Page, PageController, logged_in
 
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 
 
 def test_page_logged_in(terminal):

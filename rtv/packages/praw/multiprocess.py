@@ -1,6 +1,5 @@
 """Provides a request server to be used with the multiprocess handler."""
 
-from __future__ import print_function, unicode_literals
 
 import socket
 import sys
@@ -8,7 +7,8 @@ from optparse import OptionParser
 from . import __version__
 from .handlers import DefaultHandler
 from requests import Session
-from six.moves import cPickle, socketserver  # pylint: disable=F0401
+import pickle
+import socketserver
 from threading import Lock
 
 
@@ -24,7 +24,7 @@ class ThreadingTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
         exc_type, exc_value, _ = sys.exc_info()
         if exc_type is socket.error and exc_value[0] == 32:
             pass
-        elif exc_type is cPickle.UnpicklingError:
+        elif exc_type is pickle.UnpicklingError:
             sys.stderr.write('Invalid connection from {0}\n'
                              .format(client_addr[0]))
         else:
@@ -65,15 +65,15 @@ class RequestHandler(socketserver.StreamRequestHandler):
 
     def handle(self):
         """Parse the RPC, make the call, and pickle up the return value."""
-        data = cPickle.load(self.rfile)  # pylint: disable=E1101
+        data = pickle.load(self.rfile)  # pylint: disable=E1101
         method = data.pop('method')
         try:
             retval = getattr(self, 'do_{0}'.format(method))(**data)
         except Exception as e:
             # All exceptions should be passed to the client
             retval = e
-        cPickle.dump(retval, self.wfile,  # pylint: disable=E1101
-                     cPickle.HIGHEST_PROTOCOL)
+        pickle.dump(retval, self.wfile,  # pylint: disable=E1101
+                     pickle.HIGHEST_PROTOCOL)
 
 
 def run():

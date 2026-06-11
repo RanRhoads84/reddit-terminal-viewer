@@ -1,8 +1,3 @@
-**THIS PROJECT IS NO LONGER MAINTAINED**
-
-- [RTV Development is Shutting Down](https://github.com/michael-lazar/rtv/issues/696)
-- [List of Alternative Projects](https://gist.github.com/michael-lazar/8c31b9f637c3b9d7fbdcbb0eebcf2b0a)
-
 <h1 align="center">Reddit Terminal Viewer (RTV)</h1>
 
 <p align="center">
@@ -15,14 +10,14 @@ A text-based interface (TUI) to view and interact with Reddit from your terminal
 
 ## Table of Contents
 
-* [Demo](#demo)  
-* [Installation](#installation)  
-* [Usage](#usage)  
+* [Demo](#demo)
+* [Installation](#installation)
+* [Usage](#usage)
 * [Settings](#settings)
 * [Themes](#themes)
-* [FAQ](#faq)  
-* [Contributing](#contributing)  
-* [License](#license)  
+* [FAQ](#faq)
+* [Contributing](#contributing)
+* [License](#license)
 
 ## Demo
 
@@ -30,55 +25,33 @@ A text-based interface (TUI) to view and interact with Reddit from your terminal
 <img alt="title image" src="resources/demo.gif"/>
 </p>
 
-You can use *telnet* or *ssh* to try out a lite version of RTV directly in your terminal, without needing to install it:
-
-- ``$ telnet redditbox.us``
-- ``$ ssh redditbox.us``
-
-*[redditbox.us](https://redditbox.us/) is an independent project by Alex Jarmoszuk*
-
 ## Installation
 
-### PyPI package
+RTV requires **Python 3.10 or newer**. See [INSTALL.md](INSTALL.md) for full
+instructions including virtual environment setup, development installs, running
+tests, and Reddit OAuth setup.
 
-RTV is available on [PyPI](https://pypi.python.org/pypi/rtv/) and can be installed with pip:
-
-```bash
-$ pip install rtv
-```
-
-### Native packages
-
-See [Repology](https://repology.org/metapackage/rtv/packages) for an up-to-date list of supported distro packages:
+**Quick install from source:**
 
 ```bash
-# macOS
-$ brew install rtv
-
-# Arch
-$ pacman -S rtv
-
-# Nix
-$ nix-env -i rtv
-
-# Debian
-$ apt install rtv
-
-# FreeBSD
-$ pkg install rtv
+git clone https://github.com/michael-lazar/rtv.git
+cd rtv
+pip install .
 ```
 
-### From source
+**Linux clipboard support** (optional) requires a clipboard tool:
 
 ```bash
-$ git clone https://github.com/michael-lazar/rtv.git
-$ cd rtv
-$ python setup.py install
+# Wayland (modern default)
+sudo apt install wl-clipboard    # Debian/Ubuntu
+sudo pacman -S wl-clipboard      # Arch
+
+# X11 / XWayland fallback
+sudo apt install xsel            # Debian/Ubuntu
+sudo pacman -S xsel              # Arch
 ```
 
-### Windows
-
-RTV is not supported on Windows, due to a lack of resources and interest. Sorry!
+Windows is not supported.
 
 ## Usage
 
@@ -164,7 +137,7 @@ The default programs that RTV interacts with can be configured through environme
 ### Clipboard
 
 RTV supports copying submission links to the OS clipboard. On macOS this is supported out of the box.
-On Linux systems you will need to install either [xsel](http://www.vergenet.net/~conrad/software/xsel/) or [xclip](https://sourceforge.net/projects/xclip/).
+On Linux systems you will need to install a clipboard tool: `wl-clipboard` (Wayland), `xsel`, or `xclip` (X11/XWayland). See [INSTALL.md](INSTALL.md#system-packages-linux) for distro-specific commands.
 
 ## Themes
 
@@ -201,17 +174,27 @@ For instructions on writing and installing your own themes, see [THEMES.md](THEM
 
 <details>
  <summary>Why am I getting an error during installation/when launching rtv?</summary>
- 
-  > If your distro ships with an older version of python 2.7 or python-requests,
-  > you may experience SSL errors or other package incompatibilities. The
-  > easiest way to fix this is to install rtv using python 3. If you
-  > don't already have pip3, see http://stackoverflow.com/a/6587528 for setup
-  > instructions. Then do
+
+  > RTV requires Python 3.10 or newer. Install from source:
   >
   > ```bash
-  > $ sudo pip uninstall rtv
-  > $ sudo pip3 install -U rtv
+  > python3 --version        # must be 3.10+
+  > pip install .
   > ```
+  >
+  > See [INSTALL.md](INSTALL.md) for a step-by-step walkthrough including
+  > virtual environment setup and common error fixes.
+
+</details>
+
+<details>
+ <summary>Why do I see "Forbidden" or get no results when browsing?</summary>
+
+  > Reddit requires authentication for most API access. Press `u` inside RTV
+  > to log in via OAuth — this opens a browser tab. After authorizing, RTV
+  > saves your refresh token and logs in automatically on future launches.
+  >
+  > See [INSTALL.md — First run and Reddit authentication](INSTALL.md#first-run-and-reddit-authentication).
 
 </details>
 <details>

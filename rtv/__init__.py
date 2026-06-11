@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 r"""
 ________     __________________________
 ___  __ \__________  /_____  /__(_)_  /_
@@ -23,8 +22,6 @@ _____/  /_/  \___/____/|__/ \___//_/
 
 (RTV)
 """
-
-from __future__ import unicode_literals
 
 from .__version__ import __version__
 

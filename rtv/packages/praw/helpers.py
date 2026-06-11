@@ -19,9 +19,6 @@ The functions here provide functionality that is often needed by programs using
 PRAW, but which isn't part of reddit's API.
 """
 
-from __future__ import unicode_literals
-
-import six
 import sys
 import time
 from collections import deque
@@ -60,7 +57,7 @@ def comment_stream(reddit_session, subreddit, limit=None, verbosity=1):
 
     """
     get_function = partial(reddit_session.get_comments,
-                           six.text_type(subreddit))
+                           str(subreddit))
     return _stream_generator(get_function, limit, verbosity)
 
 
@@ -88,7 +85,7 @@ def submission_stream(reddit_session, subreddit, limit=None, verbosity=1):
         information regarding the submission stream. (Default: 1)
 
     """
-    if six.text_type(subreddit).lower() == "all":
+    if str(subreddit).lower() == "all":
         if limit is None:
             limit = 1000
     if not hasattr(subreddit, 'reddit_session'):
@@ -109,7 +106,7 @@ def valid_redditors(redditors, sub):
     registered on reddit.
 
     """
-    simplified = list(set(six.text_type(x).lower() for x in redditors))
+    simplified = list(set(str(x).lower() for x in redditors))
     return [sub.reddit_session.get_redditor(simplified[i], fetch=False)
             for (i, resp) in enumerate(sub.set_flair_csv(
                 ({'user': x, 'flair_text': x} for x in simplified)))
@@ -183,7 +180,7 @@ def submissions_between(reddit_session,
 
     if lowest_timestamp is not None:
         lowest_timestamp = int(lowest_timestamp) + REDDIT_TIMESTAMP_OFFSET
-    elif not isinstance(subreddit, six.string_types):
+    elif not isinstance(subreddit, str):
         lowest_timestamp = int(subreddit.created)
     elif subreddit not in ("all", "contrib", "mod", "friend"):
         lowest_timestamp = int(reddit_session.get_subreddit(subreddit).created)
@@ -381,7 +378,7 @@ def chunk_sequence(sequence, chunk_length, allow_incomplete=True):
 
 def convert_id36_to_numeric_id(id36):
     """Convert strings representing base36 numbers into an integer."""
-    if not isinstance(id36, six.string_types) or id36.count("_") > 0:
+    if not isinstance(id36, str) or id36.count("_") > 0:
         raise ValueError("must supply base36 string, not fullname (e.g. use "
                          "xxxxx, not t3_xxxxx)")
     return int(id36, 36)
@@ -400,7 +397,7 @@ def convert_numeric_id_to_id36(numeric_id):
     https://en.wikipedia.org/wiki/Base36
     """
     # base36 allows negative numbers, but reddit does not
-    if not isinstance(numeric_id, six.integer_types) or numeric_id < 0:
+    if not isinstance(numeric_id, int) or numeric_id < 0:
         raise ValueError("must supply a positive int/long")
 
     # Alphabet used for base 36 conversion

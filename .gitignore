@@ -12,3 +12,8 @@ dist
 rtv.egg-info
 tests/refresh-token
 venv/
+journalctrl.txt
+aur/pkg/
+aur/src/
+aur/rtv-git/
+aur/*.pkg.tar.zst

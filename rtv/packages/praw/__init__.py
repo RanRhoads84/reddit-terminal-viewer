@@ -24,13 +24,10 @@ violating them.
 More information about PRAW can be found at https://github.com/praw-dev/praw
 """
 
-from __future__ import print_function, unicode_literals
-
 import json
 import os
 import platform
 import re
-import six
 import sys
 from . import decorators, errors
 from .handlers import DefaultHandler
@@ -44,10 +41,9 @@ from requests import Session
 from requests.compat import urljoin
 from requests.utils import to_native_string
 from requests import Request
-# pylint: disable=F0401
-from six.moves import html_entities, http_cookiejar
-from six.moves.urllib.parse import parse_qs, urlparse, urlunparse
-# pylint: enable=F0401
+from html import entities as html_entities
+from http import cookiejar as http_cookiejar
+from urllib.parse import parse_qs, urlparse, urlunparse
 from warnings import warn_explicit
 
 
@@ -239,7 +235,7 @@ class Config(object):  # pylint: disable=R0903
                         'wikipagelisting':      objects.WikiPageListing,
                         'UserList':             objects.UserList}
         self.by_object = dict((value, key) for (key, value) in
-                              six.iteritems(self.by_kind))
+                              self.by_kind.items())
         self.by_object[objects.LoggedInRedditor] = obj['redditor_kind']
         self.cache_timeout = float(obj['cache_timeout'])
         self.check_for_updates = config_boolean(obj['check_for_updates'])
@@ -331,7 +327,7 @@ class BaseReddit(object):
         for more details.
 
         """
-        if not user_agent or not isinstance(user_agent, six.string_types):
+        if not user_agent or not isinstance(user_agent, str):
             raise TypeError('user_agent must be a non-empty string.')
         if 'bot' in user_agent.lower():
             warn_explicit(
@@ -416,7 +412,7 @@ class BaseReddit(object):
             return (request, key_items, kwargs)
 
         def decode(match):
-            return six.unichr(html_entities.name2codepoint[match.group(1)])
+            return chr(html_entities.name2codepoint[match.group(1)])
 
         def handle_redirect():
             response = None
@@ -495,7 +491,7 @@ class BaseReddit(object):
         :returns: The number of items removed from the cache.
 
         """
-        if isinstance(urls, six.string_types):
+        if isinstance(urls, str):
             urls = (urls,)
         return self.handler.evict(urls)
 
@@ -816,7 +812,7 @@ class UnauthenticatedReddit(BaseReddit):
 
         """
         key = 'sub_comments_gilded' if gilded_only else 'subreddit_comments'
-        url = self.config[key].format(subreddit=six.text_type(subreddit))
+        url = self.config[key].format(subreddit=str(subreddit))
         return self.get_content(url, *args, **kwargs)
 
     @decorators.restrict_access(scope='read')
@@ -879,10 +875,10 @@ class UnauthenticatedReddit(BaseReddit):
             containing the keys `flair_css_class`, `flair_text`, and `user`.
 
         """
-        name = six.text_type(redditor)
+        name = str(redditor)
         params.update(name=name)
         url = self.config['flairlist'].format(
-            subreddit=six.text_type(subreddit))
+            subreddit=str(subreddit))
         data = self.request_json(url, params=params)
         if not data['users'] or \
                 data['users'][0]['user'].lower() != name.lower():
@@ -933,14 +929,14 @@ class UnauthenticatedReddit(BaseReddit):
 
         # In these cases, we will have a list of things to return.
         # Otherwise, it will just be one item.
-        if isinstance(thing_id, six.string_types) and ',' in thing_id:
+        if isinstance(thing_id, str) and ',' in thing_id:
             thing_id = thing_id.split(',')
-        return_list = bool(url) or not isinstance(thing_id, six.string_types)
+        return_list = bool(url) or not isinstance(thing_id, str)
 
         if url:
             param_groups = [{'url': url}]
         else:
-            if isinstance(thing_id, six.string_types):
+            if isinstance(thing_id, str):
                 thing_id = [thing_id]
             id_chunks = chunk_sequence(thing_id, 100)
             param_groups = [{'id': ','.join(id_chunk)} for
@@ -969,7 +965,7 @@ class UnauthenticatedReddit(BaseReddit):
     def get_moderators(self, subreddit, **kwargs):
         """Return the list of moderators for the given subreddit."""
         url = self.config['moderators'].format(
-            subreddit=six.text_type(subreddit))
+            subreddit=str(subreddit))
         return self.request_json(url, **kwargs)
 
     @decorators.restrict_access(scope='read')
@@ -1031,7 +1027,7 @@ class UnauthenticatedReddit(BaseReddit):
 
         """
         url = self.config['subreddit_random'].format(
-            subreddit=six.text_type(subreddit))
+            subreddit=str(subreddit))
         try:
             item = self.request_json(url,
                                      params={'unique': self._unique_count})
@@ -1071,7 +1067,7 @@ class UnauthenticatedReddit(BaseReddit):
         :param subreddit: The subreddit whose rules we will return.
 
         """
-        url = self.config['rules'].format(subreddit=six.text_type(subreddit))
+        url = self.config['rules'].format(subreddit=str(subreddit))
         return self.request_json(url)
 
     @decorators.restrict_access(scope='read')
@@ -1082,7 +1078,7 @@ class UnauthenticatedReddit(BaseReddit):
             a single sticky, it is considered the top one.
 
         """
-        url = self.config['sticky'].format(subreddit=six.text_type(subreddit))
+        url = self.config['sticky'].format(subreddit=str(subreddit))
         param = {'num': 2} if bottom else None
         return objects.Submission.from_json(self.request_json(url,
                                                               params=param))
@@ -1197,19 +1193,19 @@ class UnauthenticatedReddit(BaseReddit):
 
         """
         url = self.config['subreddit_traffic'].format(
-            subreddit=six.text_type(subreddit))
+            subreddit=str(subreddit))
         return self.request_json(url)
 
     @decorators.restrict_access(scope='wikiread', login=False)
     def get_wiki_page(self, subreddit, page):
         """Return a WikiPage object for the subreddit and page provided."""
-        return objects.WikiPage(self, six.text_type(subreddit), page.lower())
+        return objects.WikiPage(self, str(subreddit), page.lower())
 
     @decorators.restrict_access(scope='wikiread', login=False)
     def get_wiki_pages(self, subreddit):
         """Return a list of WikiPage objects for the subreddit."""
         url = self.config['wiki_pages'].format(
-            subreddit=six.text_type(subreddit))
+            subreddit=str(subreddit))
         return self.request_json(url)
 
     def is_username_available(self, username):
@@ -1252,7 +1248,7 @@ class UnauthenticatedReddit(BaseReddit):
             params['t'] = period
         if subreddit:
             params['restrict_sr'] = 'on'
-            subreddit = six.text_type(subreddit)
+            subreddit = str(subreddit)
         else:
             subreddit = 'all'
         url = self.config['search'].format(subreddit=subreddit)
@@ -1336,7 +1332,7 @@ class AuthenticatedReddit(OAuth2Reddit, UnauthenticatedReddit):
         :returns: The json response from the server.
 
         """
-        data = {'r': six.text_type(subreddit)}
+        data = {'r': str(subreddit)}
         # Clear moderated subreddits and cache
         self.user._mod_subs = None  # pylint: disable=W0212
         self.evict(self.config['my_mod_subreddits'])
@@ -1383,10 +1379,10 @@ class AuthenticatedReddit(OAuth2Reddit, UnauthenticatedReddit):
         """
         data = {'content': content,
                 'page': page,
-                'r': six.text_type(subreddit),
+                'r': str(subreddit),
                 'reason': reason}
         evict = self.config['wiki_page'].format(
-            subreddit=six.text_type(subreddit), page=page.lower())
+            subreddit=str(subreddit), page=page.lower())
         self.evict(evict)
         return self.request_json(self.config['wiki_edit'], data=data)
 
@@ -1421,7 +1417,7 @@ class AuthenticatedReddit(OAuth2Reddit, UnauthenticatedReddit):
             of possible flair choices.
 
         """
-        data = {'r':  six.text_type(subreddit), 'link': link}
+        data = {'r':  str(subreddit), 'link': link}
         return self.request_json(self.config['flairselector'], data=data)
 
     @decorators.restrict_access(scope='read', login=True)
@@ -1448,7 +1444,7 @@ class AuthenticatedReddit(OAuth2Reddit, UnauthenticatedReddit):
             return False
         if '*' in self._authentication:
             return True
-        if isinstance(scope, six.string_types):
+        if isinstance(scope, str):
             scope = [scope]
         return all(s in self._authentication for s in scope)
 
@@ -1568,9 +1564,9 @@ class AuthenticatedReddit(OAuth2Reddit, UnauthenticatedReddit):
         else:
             # User flair
             data['name'] = self.user.name
-            data['r'] = six.text_type(item)
+            data['r'] = str(item)
             evict = self.config['flairlist'].format(
-                subreddit=six.text_type(item))
+                subreddit=str(item))
         response = self.request_json(self.config['select_flair'], data=data)
         self.evict(evict)
         return response
@@ -1592,7 +1588,7 @@ class AuthenticatedReddit(OAuth2Reddit, UnauthenticatedReddit):
         """
         if isinstance(scope, (list, tuple)):
             scope = set(scope)
-        elif isinstance(scope, six.string_types):
+        elif isinstance(scope, str):
             scope = set(scope.split())
         if not isinstance(scope, set):
             raise TypeError('`scope` parameter must be a set')
@@ -1654,7 +1650,7 @@ class ModConfigMixin(AuthenticatedReddit):
         :returns: The json response from the server.
 
         """
-        subreddit = six.text_type(subreddit)
+        subreddit = str(subreddit)
         if name and header:
             raise TypeError('Both name and header cannot be set.')
         elif name:
@@ -1671,7 +1667,7 @@ class ModConfigMixin(AuthenticatedReddit):
     def get_settings(self, subreddit, **params):
         """Return the settings for the given subreddit."""
         url = self.config['subreddit_settings'].format(
-            subreddit=six.text_type(subreddit))
+            subreddit=str(subreddit))
         return self.request_json(url, params=params)['data']
 
     @decorators.restrict_access(scope='modconfig')
@@ -1723,8 +1719,8 @@ class ModConfigMixin(AuthenticatedReddit):
                 'spam_selfposts': spam_selfposts,
                 'title': title,
                 'type': subreddit_type,
-                'wiki_edit_age': six.text_type(wiki_edit_age),
-                'wiki_edit_karma': six.text_type(wiki_edit_karma),
+                'wiki_edit_age': str(wiki_edit_age),
+                'wiki_edit_karma': str(wiki_edit_karma),
                 'wikimode': wikimode}
 
         if kwargs:
@@ -1732,7 +1728,7 @@ class ModConfigMixin(AuthenticatedReddit):
             warn_explicit(msg, UserWarning, '', 0)
             data.update(kwargs)
         evict = self.config['subreddit_settings'].format(
-            subreddit=six.text_type(subreddit))
+            subreddit=str(subreddit))
         self.evict(evict)
         return self.request_json(self.config['site_admin'], data=data)
 
@@ -1743,7 +1739,7 @@ class ModConfigMixin(AuthenticatedReddit):
         :returns: The json response from the server.
 
         """
-        subreddit = six.text_type(subreddit)
+        subreddit = str(subreddit)
         data = {'r': subreddit,
                 'stylesheet_contents': stylesheet,
                 'op': 'save'}  # Options: save / preview
@@ -1773,7 +1769,7 @@ class ModConfigMixin(AuthenticatedReddit):
             raise TypeError("upload_as must be 'jpg', 'png', or None.")
         with open(image_path, 'rb') as image:
             image_type = upload_as or _image_type(image)
-            data = {'r': six.text_type(subreddit), 'img_type': image_type}
+            data = {'r': str(subreddit), 'img_type': image_type}
             if header:
                 data['header'] = 1
             else:
@@ -1820,10 +1816,10 @@ class ModFlairMixin(AuthenticatedReddit):
         :returns: The json response from the server.
 
         """
-        data = {'r': six.text_type(subreddit),
+        data = {'r': str(subreddit),
                 'text': text,
                 'css_class': css_class,
-                'text_editable': six.text_type(text_editable),
+                'text_editable': str(text_editable),
                 'flair_type': 'LINK_FLAIR' if is_link else 'USER_FLAIR'}
         return self.request_json(self.config['flairtemplate'], data=data)
 
@@ -1834,7 +1830,7 @@ class ModFlairMixin(AuthenticatedReddit):
         :returns: The json response from the server.
 
         """
-        data = {'r': six.text_type(subreddit),
+        data = {'r': str(subreddit),
                 'flair_type': 'LINK_FLAIR' if is_link else 'USER_FLAIR'}
         return self.request_json(self.config['clearflairtemplates'], data=data)
 
@@ -1855,7 +1851,7 @@ class ModFlairMixin(AuthenticatedReddit):
         if not link_flair_enabled:
             link_flair_position = ''
         link_flair_self_assign = 'on' if link_flair_self_assign else 'off'
-        data = {'r': six.text_type(subreddit),
+        data = {'r': str(subreddit),
                 'flair_enabled': flair_enabled,
                 'flair_position': flair_position,
                 'flair_self_assign_enabled': flair_self_assign,
@@ -1870,8 +1866,8 @@ class ModFlairMixin(AuthenticatedReddit):
         :returns: The json response from the server.
 
         """
-        data = {'r': six.text_type(subreddit),
-                'name': six.text_type(user)}
+        data = {'r': str(subreddit),
+                'name': str(user)}
         return self.request_json(self.config['deleteflair'], data=data)
 
     @decorators.restrict_access(scope='modflair')
@@ -1887,7 +1883,7 @@ class ModFlairMixin(AuthenticatedReddit):
 
         """
         url = self.config['flairlist'].format(
-            subreddit=six.text_type(subreddit))
+            subreddit=str(subreddit))
         return self.get_content(url, *args, root_field=None,
                                 thing_field='users', after_field='next',
                                 **kwargs)
@@ -1906,16 +1902,16 @@ class ModFlairMixin(AuthenticatedReddit):
         :returns: The json response from the server.
 
         """
-        data = {'r': six.text_type(subreddit),
+        data = {'r': str(subreddit),
                 'text': flair_text or '',
                 'css_class': flair_css_class or ''}
         if isinstance(item, objects.Submission):
             data['link'] = item.fullname
             evict = item.permalink
         else:
-            data['name'] = six.text_type(item)
+            data['name'] = str(item)
             evict = self.config['flairlist'].format(
-                subreddit=six.text_type(subreddit))
+                subreddit=str(subreddit))
         response = self.request_json(self.config['flair'], data=data)
         self.evict(evict)
         return response
@@ -1943,13 +1939,13 @@ class ModFlairMixin(AuthenticatedReddit):
             lines.append(','.join([mapping.get(x, '') for x in item_order]))
         response = []
         while len(lines):
-            data = {'r': six.text_type(subreddit),
+            data = {'r': str(subreddit),
                     'flair_csv': '\n'.join(lines[:100])}
             response.extend(self.request_json(self.config['flaircsv'],
                                               data=data))
             lines = lines[100:]
         evict = self.config['flairlist'].format(
-            subreddit=six.text_type(subreddit))
+            subreddit=str(subreddit))
         self.evict(evict)
         return response
 
@@ -1978,10 +1974,10 @@ class ModLogMixin(AuthenticatedReddit):
         """
         params = kwargs.setdefault('params', {})
         if mod is not None:
-            params['mod'] = six.text_type(mod)
+            params['mod'] = str(mod)
         if action is not None:
-            params['type'] = six.text_type(action)
-        url = self.config['modlog'].format(subreddit=six.text_type(subreddit))
+            params['type'] = str(action)
+        url = self.config['modlog'].format(subreddit=str(subreddit))
         return self.get_content(url, *args, **kwargs)
 
 
@@ -2014,7 +2010,7 @@ class ModOnlyMixin(AuthenticatedReddit):
             the Redditor will be in key 'name' (default: True).
 
         """
-        url = self.config['banned'].format(subreddit=six.text_type(subreddit))
+        url = self.config['banned'].format(subreddit=str(subreddit))
         return self._get_userlist(url, user_only, *args, **kwargs)
 
     def get_contributors(self, subreddit, *args, **kwargs):
@@ -2032,7 +2028,7 @@ class ModOnlyMixin(AuthenticatedReddit):
             # restrict_access to determine what class the decorator is
             # operating on.
             url = self.config['contributors'].format(
-                subreddit=six.text_type(subreddit))
+                subreddit=str(subreddit))
             return self._get_userlist(url, user_only=True, *args, **kwargs)
 
         if self.is_logged_in():
@@ -2055,7 +2051,7 @@ class ModOnlyMixin(AuthenticatedReddit):
         :meth:`.get_content`. Note: the `url` parameter cannot be altered.
 
         """
-        url = self.config['edited'].format(subreddit=six.text_type(subreddit))
+        url = self.config['edited'].format(subreddit=str(subreddit))
         return self.get_content(url, *args, **kwargs)
 
     @decorators.restrict_access(scope='privatemessages', mod=True)
@@ -2071,7 +2067,7 @@ class ModOnlyMixin(AuthenticatedReddit):
 
         """
         url = self.config['mod_mail'].format(
-            subreddit=six.text_type(subreddit))
+            subreddit=str(subreddit))
         return self.get_content(url, *args, **kwargs)
 
     @decorators.restrict_access(scope='read', mod=True)
@@ -2087,7 +2083,7 @@ class ModOnlyMixin(AuthenticatedReddit):
 
         """
         url = self.config['modqueue'].format(
-            subreddit=six.text_type(subreddit))
+            subreddit=str(subreddit))
         return self.get_content(url, *args, **kwargs)
 
     @decorators.restrict_access(scope='read', mod=True)
@@ -2101,7 +2097,7 @@ class ModOnlyMixin(AuthenticatedReddit):
         :meth:`.get_content`. Note: the `url` parameter cannot be altered.
 
         """
-        url = self.config['muted'].format(subreddit=six.text_type(subreddit))
+        url = self.config['muted'].format(subreddit=str(subreddit))
         return self._get_userlist(url, user_only, *args, **kwargs)
 
     @decorators.restrict_access(scope='read', mod=True)
@@ -2116,7 +2112,7 @@ class ModOnlyMixin(AuthenticatedReddit):
         :meth:`.get_content`. Note: the `url` parameter cannot be altered.
 
         """
-        url = self.config['reports'].format(subreddit=six.text_type(subreddit))
+        url = self.config['reports'].format(subreddit=str(subreddit))
         return self.get_content(url, *args, **kwargs)
 
     @decorators.restrict_access(scope='read', mod=True)
@@ -2131,14 +2127,14 @@ class ModOnlyMixin(AuthenticatedReddit):
         :meth:`.get_content`. Note: the `url` parameter cannot be altered.
 
         """
-        url = self.config['spam'].format(subreddit=six.text_type(subreddit))
+        url = self.config['spam'].format(subreddit=str(subreddit))
         return self.get_content(url, *args, **kwargs)
 
     @decorators.restrict_access('modconfig', mod=False, login=False)
     def get_stylesheet(self, subreddit, **params):
         """Return the stylesheet and images for the given subreddit."""
         url = self.config['stylesheet'].format(
-            subreddit=six.text_type(subreddit))
+            subreddit=str(subreddit))
         return self.request_json(url, params=params)['data']
 
     @decorators.restrict_access(scope='read', mod=True)
@@ -2154,14 +2150,14 @@ class ModOnlyMixin(AuthenticatedReddit):
 
         """
         url = self.config['unmoderated'].format(
-            subreddit=six.text_type(subreddit))
+            subreddit=str(subreddit))
         return self.get_content(url, *args, **kwargs)
 
     @decorators.restrict_access(scope='read', mod=True)
     def get_wiki_banned(self, subreddit, *args, **kwargs):
         """Return a get_content generator of users banned from the wiki."""
         url = self.config['wiki_banned'].format(
-            subreddit=six.text_type(subreddit))
+            subreddit=str(subreddit))
         return self._get_userlist(url, user_only=True, *args, **kwargs)
 
     @decorators.restrict_access(scope='read', mod=True)
@@ -2175,7 +2171,7 @@ class ModOnlyMixin(AuthenticatedReddit):
 
         """
         url = self.config['wiki_contributors'].format(
-            subreddit=six.text_type(subreddit))
+            subreddit=str(subreddit))
         return self._get_userlist(url, user_only=True, *args, **kwargs)
 
 
@@ -2217,7 +2213,7 @@ class ModSelfMixin(AuthenticatedReddit):
 
         :returns: the json response from the server.
         """
-        if isinstance(subreddit, six.string_types):
+        if isinstance(subreddit, str):
             subreddit = self.get_subreddit(subreddit)
 
         data = {'id': subreddit.fullname}
@@ -2303,7 +2299,7 @@ class MultiredditMixin(AuthenticatedReddit):
         url = self.config['multireddit_about'].format(user=self.user.name,
                                                       multi=name)
         if subreddits:
-            subreddits = [{'name': six.text_type(sr)} for sr in subreddits]
+            subreddits = [{'name': str(sr)} for sr in subreddits]
         model = {}
         for key in ('description_md', 'icon_name', 'key_color', 'subreddits',
                     'visibility', 'weighting_scheme'):
@@ -2355,7 +2351,7 @@ class MultiredditMixin(AuthenticatedReddit):
         :class:`.Multireddit` constructor.
 
         """
-        return objects.Multireddit(self, six.text_type(redditor), multi,
+        return objects.Multireddit(self, str(redditor), multi,
                                    *args, **kwargs)
 
     def get_multireddits(self, redditor, *args, **kwargs):
@@ -2372,7 +2368,7 @@ class MultiredditMixin(AuthenticatedReddit):
         are visible. Otherwise, only public multireddits are returned.
 
         """
-        redditor = six.text_type(redditor)
+        redditor = str(redditor)
         url = self.config['multireddit_user'].format(user=redditor)
         return self.request_json(url, *args, **kwargs)
 
@@ -2594,15 +2590,15 @@ class PrivateMessagesMixin(AuthenticatedReddit):
 
         """
         if isinstance(recipient, objects.Subreddit):
-            recipient = '/r/{0}'.format(six.text_type(recipient))
+            recipient = '/r/{0}'.format(str(recipient))
         else:
-            recipient = six.text_type(recipient)
+            recipient = str(recipient)
 
         data = {'text': message,
                 'subject': subject,
                 'to': recipient}
         if from_sr:
-            data['from_sr'] = six.text_type(from_sr)
+            data['from_sr'] = str(from_sr)
         if captcha:
             data.update(captcha)
         response = self.request_json(self.config['compose'], data=data,
@@ -2632,7 +2628,7 @@ class ReportMixin(AuthenticatedReddit):
         :returns: The json response from the server.
 
         """
-        if isinstance(thing_id, six.string_types):
+        if isinstance(thing_id, str):
             thing_id = [thing_id]
         else:
             # Guarantee a subscriptable type.
@@ -2732,9 +2728,9 @@ class SubmitMixin(AuthenticatedReddit):
         if you want to manually handle captchas.
 
         """
-        if isinstance(text, six.string_types) == bool(url):
+        if isinstance(text, str) == bool(url):
             raise TypeError('One (and only one) of text or url is required!')
-        data = {'sr': six.text_type(subreddit),
+        data = {'sr': str(subreddit),
                 'title': title}
         if text or text == '':
             data['kind'] = 'self'
@@ -2784,7 +2780,7 @@ class SubscribeMixin(AuthenticatedReddit):
 
         """
         data = {'action': 'unsub' if unsubscribe else 'sub',
-                'sr_name': six.text_type(subreddit)}
+                'sr_name': str(subreddit)}
         response = self.request_json(self.config['subscribe'], data=data)
         self.evict(self.config['my_subreddits'])
         return response

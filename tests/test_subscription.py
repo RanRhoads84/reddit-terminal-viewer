@@ -1,16 +1,10 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import curses
 
 import pytest
 
 from rtv.subscription_page import SubscriptionPage
 
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 
 
 def test_subscription_page_construct(reddit, terminal, config, oauth,

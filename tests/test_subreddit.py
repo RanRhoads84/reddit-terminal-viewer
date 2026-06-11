@@ -1,10 +1,6 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import curses
 from collections import OrderedDict
 
-import six
 import pytest
 
 from rtv import __version__
@@ -12,10 +8,7 @@ from rtv.subreddit_page import SubredditPage
 from rtv.packages.praw.errors import NotFound, HTTPException
 from requests.exceptions import ReadTimeout
 
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 
 
 PROMPTS = OrderedDict([
@@ -102,13 +95,13 @@ def test_subreddit_title(subreddit_page, terminal, capsys):
         terminal.config['ascii'] = True
         subreddit_page.draw()
         out, _ = capsys.readouterr()
-        assert isinstance(out, six.text_type)
+        assert isinstance(out, str)
         assert out == '\x1b]2;hello ? - rtv {}\x07'.format(__version__)
 
         terminal.config['ascii'] = False
         subreddit_page.draw()
         out, _ = capsys.readouterr()
-        assert isinstance(out, six.text_type)
+        assert isinstance(out, str)
         assert out == '\x1b]2;hello ❤ - rtv {}\x07'.format(__version__)
 
     with mock.patch.dict('os.environ', {'DISPLAY': ''}):

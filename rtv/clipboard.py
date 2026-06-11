@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import sys
 import subprocess
 
@@ -31,8 +28,8 @@ def copy_osx(text):
 def copy_linux(text):
 
     def get_command_name():
-        # Checks for the installation of xsel or xclip
-        for cmd in ['xsel', 'xclip']:
+        # wl-copy (Wayland) preferred; fall back to xsel/xclip (X11/XWayland)
+        for cmd in ['wl-copy', 'xsel', 'xclip']:
             cmd_exists = subprocess.call(
                 ['which', cmd],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0
@@ -41,6 +38,7 @@ def copy_linux(text):
         return None
 
     cmd_args = {
+        'wl-copy': ['wl-copy'],
         'xsel': ['xsel', '-b', '-i'],
         'xclip': ['xclip', '-selection', 'c']}
     cmd_name = get_command_name()

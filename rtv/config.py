@@ -1,14 +1,8 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import os
-import codecs
 import shutil
 import argparse
+import configparser
 from functools import partial
-
-import six
-from six.moves import configparser
 
 from . import docs, __version__
 from .objects import KeyMap
@@ -111,7 +105,7 @@ def _copy_settings_file(source, destination, name):
 
     if os.path.exists(destination):
         try:
-            ch = six.moves.input(
+            ch = input(
                 'File %s already exists, overwrite? y/[n]):' % destination)
             if ch not in ('Y', 'y'):
                 return
@@ -206,14 +200,14 @@ class Config(object):
 
     def load_history(self):
         if os.path.exists(self.history_file):
-            with codecs.open(self.history_file, encoding='utf-8') as fp:
+            with open(self.history_file, encoding='utf-8') as fp:
                 self.history = OrderedSet([line.strip() for line in fp])
         else:
             self.history = OrderedSet()
 
     def save_history(self):
         self._ensure_filepath(self.history_file)
-        with codecs.open(self.history_file, 'w+', encoding='utf-8') as fp:
+        with open(self.history_file, 'w+', encoding='utf-8') as fp:
             fp.writelines('\n'.join(self.history[-self['history_size']:]))
 
     def delete_history(self):
@@ -249,8 +243,8 @@ class Config(object):
 
         config = configparser.ConfigParser()
         if os.path.exists(filename):
-            with codecs.open(filename, encoding='utf-8') as fp:
-                config.readfp(fp)
+            with open(filename, encoding='utf-8') as fp:
+                config.read_file(fp)
 
         return cls._parse_rtv_file(config)
 

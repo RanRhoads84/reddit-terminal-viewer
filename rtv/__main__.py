@@ -1,8 +1,4 @@
-# -*- coding: utf-8 -*-
 # pylint: disable=wrong-import-position
-
-from __future__ import unicode_literals
-from __future__ import print_function
 
 import os
 import sys
@@ -10,7 +6,6 @@ import locale
 import logging
 import warnings
 
-import six
 import requests
 
 # Need to check for curses compatibility before performing the rtv imports
@@ -62,9 +57,8 @@ def main():
 
     # Squelch SSL warnings
     logging.captureWarnings(True)
-    if six.PY3:
-        # These ones get triggered even when capturing warnings is turned on
-        warnings.simplefilter('ignore', ResourceWarning)  # pylint:disable=E0602
+    # These ones get triggered even when capturing warnings is turned on
+    warnings.simplefilter('ignore', ResourceWarning)
 
     # Set the terminal title
     if os.getenv('DISPLAY'):
@@ -100,7 +94,7 @@ def main():
         config.delete_refresh_token()
 
     if config['log']:
-        # Log request headers to the file (print hack only works on python 3.x)
+        # Log request headers to the file
         # from http import client
         # _http_logger = logging.getLogger('http.client')
         # client.HTTPConnection.debuglevel = 2

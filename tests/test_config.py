@@ -1,23 +1,16 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import os
-import codecs
 from tempfile import NamedTemporaryFile
 
 from rtv.config import Config, copy_default_config, copy_default_mailcap
 
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 
 
 def test_copy_default_config():
     """Make sure the default config file was included in the package"""
 
     with NamedTemporaryFile(suffix='.cfg') as fp:
-        with mock.patch('rtv.config.six.moves.input', return_value='y'):
+        with mock.patch('builtins.input', return_value='y'):
             copy_default_config(fp.name)
             assert fp.read()
             # Check that the permissions were changed
@@ -29,7 +22,7 @@ def test_copy_default_config_cancel():
     """Pressing ``n`` should cancel the copy"""
 
     with NamedTemporaryFile(suffix='.cfg') as fp:
-        with mock.patch('rtv.config.six.moves.input', return_value='n'):
+        with mock.patch('builtins.input', return_value='n'):
             copy_default_config(fp.name)
             assert not fp.read()
 
@@ -38,7 +31,7 @@ def test_copy_config_interrupt():
     """Pressing ``Ctrl-C`` should cancel the copy"""
 
     with NamedTemporaryFile(suffix='.cfg') as fp:
-        with mock.patch('rtv.config.six.moves.input') as func:
+        with mock.patch('builtins.input') as func:
             func.side_effect = KeyboardInterrupt
             copy_default_config(fp.name)
             assert not fp.read()
@@ -48,7 +41,7 @@ def test_copy_default_mailcap():
     """Make sure the example mailcap file was included in the package"""
 
     with NamedTemporaryFile() as fp:
-        with mock.patch('rtv.config.six.moves.input', return_value='y'):
+        with mock.patch('builtins.input', return_value='y'):
             copy_default_mailcap(fp.name)
             assert fp.read()
             # Check that the permissions were changed
@@ -175,12 +168,12 @@ def test_config_from_file():
         # [rtv]
         rows = ['{0}={1}'.format(key, val) for key, val in args.items()]
         data = '\n'.join(['[rtv]'] + rows)
-        fp.write(codecs.encode(data, 'utf-8'))
+        fp.write(data.encode('utf-8'))
 
         # [bindings]
         rows = ['{0}={1}'.format(key, val) for key, val in bindings.items()]
         data = '\n'.join(['', '', '[bindings]'] + rows)
-        fp.write(codecs.encode(data, 'utf-8'))
+        fp.write(data.encode('utf-8'))
 
         fp.flush()
         fargs, fbindings = Config.get_file(filename=fp.name)

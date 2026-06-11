@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import pytest
 from rtv.packages.praw.errors import InvalidUser
 
@@ -9,10 +6,7 @@ from rtv.docs import FOOTER_INBOX
 from rtv.inbox_page import InboxPage
 from rtv.submission_page import SubmissionPage
 
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 
 
 def test_inbox_page_construct(reddit, terminal, config, oauth, refresh_token):

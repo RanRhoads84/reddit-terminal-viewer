@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import curses
 from collections import OrderedDict
 
@@ -9,10 +6,7 @@ import pytest
 from rtv.submission_page import SubmissionPage
 from rtv.docs import FOOTER_SUBMISSION
 
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 
 
 PROMPTS = OrderedDict([

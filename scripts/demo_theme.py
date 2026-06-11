@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-from __future__ import print_function
-
 import os
 import sys
 import time
@@ -13,7 +9,7 @@ from types import MethodType
 from collections import Counter
 
 from vcr import VCR
-from six.moves.urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs
 
 from rtv.theme import Theme, ThemeList
 from rtv.config import Config
@@ -25,10 +21,7 @@ from rtv.subreddit_page import SubredditPage
 from rtv.submission_page import SubmissionPage
 from rtv.subscription_page import SubscriptionPage
 
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 
 
 def initialize_vcr():

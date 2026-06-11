@@ -1,17 +1,13 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import os
 import time
 import uuid
 import string
-import codecs
 import logging
 import threading
 
 # pylint: disable=import-error
-from six.moves.urllib.parse import urlparse, parse_qs
-from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import urlparse, parse_qs
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from . import docs
 from .config import TEMPLATES
@@ -105,11 +101,11 @@ class OAuthHandler(BaseHTTPRequestHandler):
         else:
             message = docs.OAUTH_SUCCESS
 
-        with codecs.open(template_file, 'r', 'utf-8') as fp:
+        with open(template_file, encoding='utf-8') as fp:
             index_text = fp.read()
 
         body = string.Template(index_text).substitute(message=message)
-        body = codecs.encode(body, 'utf-8')
+        body = body.encode('utf-8')
         return body
 
 

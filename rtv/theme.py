@@ -1,14 +1,11 @@
 # pylint: disable=bad-whitespace
 
 import os
-import codecs
 import curses
 import logging
+import configparser
 from collections import OrderedDict
 from contextlib import contextmanager
-
-import six
-from six.moves import configparser
 
 from .config import THEMES, DEFAULT_THEMES
 from .exceptions import ConfigError
@@ -357,7 +354,7 @@ class Theme(object):
             for (source, name), error in errors.items():
                 theme_info = '({0}) {1}'.format(source, name)
                 # Align multi-line error messages with the right column
-                err_message = six.text_type(error).replace('\n', '\n' + ' ' * 20)
+                err_message = str(error).replace('\n', '\n' + ' ' * 20)
                 print('    {0:<20}{1}'.format(theme_info, err_message))
 
         print('')
@@ -397,9 +394,9 @@ class Theme(object):
 
         try:
             config = configparser.ConfigParser()
-            config.optionxform = six.text_type  # Preserve case
-            with codecs.open(filename, encoding='utf-8') as fp:
-                config.readfp(fp)
+            config.optionxform = str  # Preserve case
+            with open(filename, encoding='utf-8') as fp:
+                config.read_file(fp)
         except configparser.ParsingError as e:
             raise ConfigError(e.message)
 
@@ -482,7 +479,7 @@ class Theme(object):
 
         if dest_field is None:
             dest_field = src_field
-        if isinstance(fallback, six.string_types):
+        if isinstance(fallback, str):
             fallback = elements[fallback]
 
         attrs = elements[src_field]

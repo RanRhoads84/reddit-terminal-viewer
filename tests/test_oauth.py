@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import requests
 
 from rtv.oauth import OAuthHelper, OAuthHandler
@@ -8,10 +5,7 @@ from rtv.exceptions import InvalidRefreshToken
 from rtv.packages.praw.errors import OAuthException
 
 
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 
 
 def test_oauth_handler_not_found(oauth_server):

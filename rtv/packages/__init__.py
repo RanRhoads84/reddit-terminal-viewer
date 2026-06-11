@@ -6,7 +6,6 @@ requests library and how it handles dependencies.
 Reference:
     https://github.com/kennethreitz/requests/blob/master/requests/packages/__init__.py
 """
-from __future__ import absolute_import
 
 import sys
 

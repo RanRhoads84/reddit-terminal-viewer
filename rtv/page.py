@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import re
 import os
 import sys
@@ -8,8 +5,7 @@ import time
 import logging
 from functools import wraps
 
-import six
-from kitchen.text.display import textual_width
+from .compat import textual_width
 
 from . import docs
 from .clipboard import copy as clipboard_copy
@@ -674,7 +670,6 @@ class Page(object):
         # Note: 2 argument form of derwin breaks PDcurses on Windows 7!
         window = self.term.stdscr.derwin(1, n_cols, self._row, 0)
         window.erase()
-        # curses.bkgd expects bytes in py2 and unicode in py3
         window.bkgd(str(' '), self.term.attr('TitleBar'))
 
         sub_name = self.content.name
@@ -721,12 +716,9 @@ class Page(object):
         if os.getenv('DISPLAY') and not os.getenv('INSIDE_EMACS'):
             title += ' - rtv {0}'.format(__version__)
             title = self.term.clean(title)
-            if six.PY3:
-                # In py3 you can't write bytes to stdout
-                title = title.decode('utf-8')
-                title = '\x1b]2;{0}\x07'.format(title)
-            else:
-                title = b'\x1b]2;{0}\x07'.format(title)
+            # term.clean() returns bytes, but stdout expects text
+            title = title.decode('utf-8')
+            title = '\x1b]2;{0}\x07'.format(title)
             sys.stdout.write(title)
             sys.stdout.flush()
 
@@ -882,5 +874,5 @@ class Page(object):
 
         message = docs.TIME_ORDER_MENU.strip().splitlines()
         ch = self.term.show_notification(message)
-        ch = six.unichr(ch)
+        ch = chr(ch)
         return choices.get(ch)
